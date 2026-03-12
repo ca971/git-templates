@@ -227,7 +227,7 @@ fi
 # 7. TRAILING WHITESPACE
 # ══════════════════════════════════════════════════════════════
 
-trailing=$(git diff --cached --diff-filter=ACM | grep -nE '^\+.*[[:blank:]]$' 2>/dev/null | grep -v '^\+\+\+' || true)
+trailing=$(git diff --cached --diff-filter=ACM | grep -nE '^\+.*[[:blank:]]$' 2>/dev/null | grep -vF '+++' || true)
 if [ -n "$trailing" ]; then
   count=$(echo "$trailing" | wc -l | tr -d ' ')
   if [ "$TRAILING_WS_BLOCK" = "true" ]; then
