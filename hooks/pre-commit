@@ -69,7 +69,6 @@ info() { echo -e "  ${DIM}  $1${NC}"; }
 
 # ── Staged files ──────────────────────────────────────────────
 STAGED=$(git diff --cached --name-only --diff-filter=ACM)
-STAGED_DIFF=$(git diff --cached --diff-filter=ACM)
 
 if [ -z "$STAGED" ]; then
   echo -e "${YELLOW}⚠️  No staged files — nothing to check${NC}"
@@ -98,7 +97,7 @@ checker_on() {
 
 debug_pattern='(TODO:|FIXME:|HACK:|XXX:|BUG:|TEMP:|console\.log|console\.debug|debugger|binding\.pry|import pdb|breakpoint\(\)|dbg!|dd\(|var_dump|die\()'
 
-debug_matches=$(printf "%s\n" "$STAGED_DIFF" |
+debug_matches=$(git diff --cached --diff-filter=ACM |
   grep '^+' |
   grep -v '^+++' |
   grep -E "$debug_pattern" 2>/dev/null |
@@ -181,7 +180,7 @@ secrets_patterns=(
 
 secrets_found=false
 for p in "${secrets_patterns[@]}"; do
-  m=$(printf "%s\n" "$STAGED_DIFF" | grep -iE "$p" 2>/dev/null | grep '^+' | grep -v '^+++' | grep -vE "(pattern|grep|secrets_patterns)" || true)
+  m=$(git diff --cached --diff-filter=ACM | grep -iE "$p" 2>/dev/null | grep '^+' | grep -v '^+++' | grep -vE "(pattern|grep|secrets_patterns)" || true)
   if [ -n "$m" ]; then
     if [ "$secrets_found" = false ]; then
       secrets_found=true
@@ -202,9 +201,9 @@ fi
 # 5. MERGE CONFLICT MARKERS (blocks)
 # ══════════════════════════════════════════════════════════════
 
-if printf "%s\n" "$STAGED_DIFF" | grep -qE '^\+[<>=]{7}( |$)'; then
+if git diff --cached --diff-filter=ACM | grep -qE '^\+[<>=]{7}( |$)'; then
   error "Merge conflict markers found"
-  printf "%s\n" "$STAGED_DIFF" | grep -nE '^\+[<>=]{7}' | head -5 | while IFS= read -r line; do
+  git diff --cached --diff-filter=ACM | grep -nE '^\+[<>=]{7}' | head -5 | while IFS= read -r line; do
     info "$line"
   done
 else
@@ -228,7 +227,7 @@ fi
 # 7. TRAILING WHITESPACE
 # ══════════════════════════════════════════════════════════════
 
-trailing=$(printf "%s\n" "$STAGED_DIFF" | grep -nE '^\+.*[[:blank:]]$' 2>/dev/null | grep -v '^\+\+\+' || true)
+trailing=$(git diff --cached --diff-filter=ACM | grep -nE '^\+.*[[:blank:]]$' 2>/dev/null | grep -v '^\+\+\+' || true)
 if [ -n "$trailing" ]; then
   count=$(echo "$trailing" | wc -l | tr -d ' ')
   if [ "$TRAILING_WS_BLOCK" = "true" ]; then
