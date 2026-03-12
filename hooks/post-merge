@@ -35,18 +35,18 @@ SHOW_STAT=$(githooks_config "post-merge" "show_stat" "true")
 MAX_FILES=$(githooks_config "post-merge" "max_files_shown" "10")
 
 # ── Changed files ─────────────────────────────────────────────
-changed=$(git diff --name-only HEAD@{1} HEAD 2>/dev/null || true)
+changed=$(git diff --name-only 'HEAD@{1}' HEAD 2>/dev/null || true)
 
 if [ -z "$changed" ]; then
-    echo -e "${GREEN}✅ Already up to date${NC}"
-    exit 0
+  echo -e "${GREEN}✅ Already up to date${NC}"
+  exit 0
 fi
 
 total=$(echo "$changed" | wc -l | tr -d ' ')
-added=$(git diff --name-only --diff-filter=A HEAD@{1} HEAD 2>/dev/null | wc -l | tr -d ' ')
-modified=$(git diff --name-only --diff-filter=M HEAD@{1} HEAD 2>/dev/null | wc -l | tr -d ' ')
-deleted=$(git diff --name-only --diff-filter=D HEAD@{1} HEAD 2>/dev/null | wc -l | tr -d ' ')
-renamed=$(git diff --name-only --diff-filter=R HEAD@{1} HEAD 2>/dev/null | wc -l | tr -d ' ')
+added=$(git diff --name-only --diff-filter=A 'HEAD@{1}' HEAD 2>/dev/null | wc -l | tr -d ' ')
+modified=$(git diff --name-only --diff-filter=M 'HEAD@{1}' HEAD 2>/dev/null | wc -l | tr -d ' ')
+deleted=$(git diff --name-only --diff-filter=D 'HEAD@{1}' HEAD 2>/dev/null | wc -l | tr -d ' ')
+renamed=$(git diff --name-only --diff-filter=R 'HEAD@{1}' HEAD 2>/dev/null | wc -l | tr -d ' ')
 
 echo ""
 echo -e "${CYAN}╔══════════════════════════════════════════════════╗${NC}"
@@ -62,10 +62,10 @@ declare -a ACTIONS=()
 
 echo ""
 echo -e "${BOLD}  Files changed:${NC} ${total} total"
-[ "$added" -gt 0 ]    && echo -e "    ${GREEN}+ ${added} added${NC}"
+[ "$added" -gt 0 ] && echo -e "    ${GREEN}+ ${added} added${NC}"
 [ "$modified" -gt 0 ] && echo -e "    ${YELLOW}~ ${modified} modified${NC}"
-[ "$deleted" -gt 0 ]  && echo -e "    ${RED}- ${deleted} deleted${NC}"
-[ "$renamed" -gt 0 ]  && echo -e "    ${CYAN}→ ${renamed} renamed${NC}"
+[ "$deleted" -gt 0 ] && echo -e "    ${RED}- ${deleted} deleted${NC}"
+[ "$renamed" -gt 0 ] && echo -e "    ${CYAN}→ ${renamed} renamed${NC}"
 
 # ── Dynamic directory grouping ────────────────────────────────
 # Auto-detect top-level directories with changes and show counts
@@ -74,22 +74,22 @@ echo -e "${BOLD}  By area:${NC}"
 
 # Map common directories to icons (extensible)
 dir_icon() {
-    case "$1" in
-        src|lib)        echo "📦" ;;
-        test|tests|spec|__tests__) echo "🧪" ;;
-        docs|doc)       echo "📖" ;;
-        .github|.gitlab|.circleci) echo "🤖" ;;
-        scripts|bin)    echo "⚡" ;;
-        config|conf|cfg) echo "⚙️ " ;;
-        migrations|db)  echo "🗄️ " ;;
-        assets|static|public) echo "🎨" ;;
-        lua)            echo "🌙" ;;
-        cmd|internal|pkg) echo "📦" ;;
-        components)     echo "🧩" ;;
-        pages|views|templates) echo "🖼️ " ;;
-        styles|css)     echo "🎨" ;;
-        *)              echo "📁" ;;
-    esac
+  case "$1" in
+  src | lib) echo "📦" ;;
+  test | tests | spec | __tests__) echo "🧪" ;;
+  docs | doc) echo "📖" ;;
+  .github | .gitlab | .circleci) echo "🤖" ;;
+  scripts | bin) echo "⚡" ;;
+  config | conf | cfg) echo "⚙️ " ;;
+  migrations | db) echo "🗄️ " ;;
+  assets | static | public) echo "🎨" ;;
+  lua) echo "🌙" ;;
+  cmd | internal | pkg) echo "📦" ;;
+  components) echo "🧩" ;;
+  pages | views | templates) echo "🖼️ " ;;
+  styles | css) echo "🎨" ;;
+  *) echo "📁" ;;
+  esac
 }
 
 # Get unique top-level dirs, count files per dir
@@ -97,33 +97,33 @@ declare -A dir_counts
 root_files=0
 
 while IFS= read -r f; do
-    [ -z "$f" ] && continue
-    if [[ "$f" == */* ]]; then
-        top_dir="${f%%/*}"
-        dir_counts["$top_dir"]=$(( ${dir_counts["$top_dir"]:-0} + 1 ))
-    else
-        root_files=$((root_files + 1))
-    fi
-done <<< "$changed"
+  [ -z "$f" ] && continue
+  if [[ "$f" == */* ]]; then
+    top_dir="${f%%/*}"
+    dir_counts["$top_dir"]=$((${dir_counts["$top_dir"]:-0} + 1))
+  else
+    root_files=$((root_files + 1))
+  fi
+done <<<"$changed"
 
 # Sort by count (descending) and display
 for dir in $(for k in "${!dir_counts[@]}"; do echo "${dir_counts[$k]} $k"; done | sort -rn | awk '{print $2}'); do
-    count="${dir_counts[$dir]}"
-    icon=$(dir_icon "$dir")
-    printf "    %s %-18s %s file(s)\n" "$icon" "${dir}/" "$count"
+  count="${dir_counts[$dir]}"
+  icon=$(dir_icon "$dir")
+  printf "    %s %-18s %s file(s)\n" "$icon" "${dir}/" "$count"
 done
 
 [ "$root_files" -gt 0 ] && echo -e "    📄 (root)              ${root_files} file(s)"
 
 # ── Top changed files (git stat) ──────────────────────────────
 if [ "$SHOW_STAT" = "true" ]; then
-    echo ""
-    echo -e "${DIM}  Most significant changes:${NC}"
-    git diff --stat HEAD@{1} HEAD 2>/dev/null | head -"$MAX_FILES" | while IFS= read -r line; do
-        echo -e "${DIM}    $line${NC}"
-    done
-    remaining=$((total - MAX_FILES))
-    [ "$remaining" -gt 0 ] && echo -e "${DIM}    ... and ${remaining} more${NC}"
+  echo ""
+  echo -e "${DIM}  Most significant changes:${NC}"
+  git diff --stat 'HEAD@{1}' HEAD 2>/dev/null | head -"$MAX_FILES" | while IFS= read -r line; do
+    echo -e "${DIM}    $line${NC}"
+  done
+  remaining=$((total - MAX_FILES))
+  [ "$remaining" -gt 0 ] && echo -e "${DIM}    ... and ${remaining} more${NC}"
 fi
 
 # ══════════════════════════════════════════════════════════════
@@ -132,142 +132,142 @@ fi
 
 # Define: lockfile → [display_name, install_command]
 declare -A LOCKFILE_MAP=(
-    # JavaScript / Node
-    ["package-lock.json"]="npm|npm install"
-    ["yarn.lock"]="Yarn|yarn install"
-    ["pnpm-lock.yaml"]="pnpm|pnpm install"
-    ["bun.lockb"]="Bun|bun install"
-    # Python
-    ["requirements.txt"]="pip|pip install -r requirements.txt"
-    ["Pipfile.lock"]="Pipenv|pipenv install"
-    ["poetry.lock"]="Poetry|poetry install"
-    ["uv.lock"]="uv|uv sync"
-    ["pdm.lock"]="PDM|pdm install"
-    # Ruby
-    ["Gemfile.lock"]="Bundler|bundle install"
-    # PHP
-    ["composer.lock"]="Composer|composer install"
-    # Go
-    ["go.sum"]="Go modules|go mod download"
-    # Rust
-    ["Cargo.lock"]="Cargo|cargo build"
-    # Elixir
-    ["mix.lock"]="Mix|mix deps.get"
-    # Dart/Flutter
-    ["pubspec.lock"]="Flutter/Dart|flutter pub get"
-    # iOS/macOS
-    ["Podfile.lock"]="CocoaPods|pod install"
-    # .NET
-    ["packages.lock.json"]=".NET|dotnet restore"
-    # Nix
-    ["flake.lock"]="Nix flake|nix flake update"
-    # Neovim
-    ["lazy-lock.json"]="lazy.nvim|Open Neovim and run :Lazy sync"
-    # Zig
-    ["build.zig.zon"]="Zig|zig build"
+  # JavaScript / Node
+  ["package-lock.json"]="npm|npm install"
+  ["yarn.lock"]="Yarn|yarn install"
+  ["pnpm-lock.yaml"]="pnpm|pnpm install"
+  ["bun.lockb"]="Bun|bun install"
+  # Python
+  ["requirements.txt"]="pip|pip install -r requirements.txt"
+  ["Pipfile.lock"]="Pipenv|pipenv install"
+  ["poetry.lock"]="Poetry|poetry install"
+  ["uv.lock"]="uv|uv sync"
+  ["pdm.lock"]="PDM|pdm install"
+  # Ruby
+  ["Gemfile.lock"]="Bundler|bundle install"
+  # PHP
+  ["composer.lock"]="Composer|composer install"
+  # Go
+  ["go.sum"]="Go modules|go mod download"
+  # Rust
+  ["Cargo.lock"]="Cargo|cargo build"
+  # Elixir
+  ["mix.lock"]="Mix|mix deps.get"
+  # Dart/Flutter
+  ["pubspec.lock"]="Flutter/Dart|flutter pub get"
+  # iOS/macOS
+  ["Podfile.lock"]="CocoaPods|pod install"
+  # .NET
+  ["packages.lock.json"]=".NET|dotnet restore"
+  # Nix
+  ["flake.lock"]="Nix flake|nix flake update"
+  # Neovim
+  ["lazy-lock.json"]="lazy.nvim|Open Neovim and run :Lazy sync"
+  # Zig
+  ["build.zig.zon"]="Zig|zig build"
 )
 
 deps_changed=false
 while IFS= read -r f; do
-    [ -z "$f" ] && continue
-    # Match basename
-    basename_f=$(basename "$f")
-    if [ -n "${LOCKFILE_MAP[$basename_f]+x}" ]; then
-        IFS='|' read -r dep_name dep_cmd <<< "${LOCKFILE_MAP[$basename_f]}"
-        if [ "$deps_changed" = false ]; then
-            echo ""
-            echo -e "${YELLOW}  📦 Dependency changes detected:${NC}"
-            deps_changed=true
-        fi
-        line_diffs=$(git diff HEAD@{1} HEAD -- "$f" 2>/dev/null | grep -c '^[+-]' 2>/dev/null || echo 0)
-        echo -e "    ${YELLOW}${basename_f}${NC} ${DIM}(${dep_name}, ${line_diffs} line diffs)${NC}"
-        ACTIONS+=("Run ${BOLD}${dep_cmd}${NC} to sync ${dep_name} dependencies")
+  [ -z "$f" ] && continue
+  # Match basename
+  basename_f=$(basename "$f")
+  if [ -n "${LOCKFILE_MAP[$basename_f]+x}" ]; then
+    IFS='|' read -r dep_name dep_cmd <<<"${LOCKFILE_MAP[$basename_f]}"
+    if [ "$deps_changed" = false ]; then
+      echo ""
+      echo -e "${YELLOW}  📦 Dependency changes detected:${NC}"
+      deps_changed=true
     fi
-done <<< "$changed"
+    line_diffs=$(git diff 'HEAD@{1}' HEAD -- "$f" 2>/dev/null | grep -c '^[+-]' 2>/dev/null || echo 0)
+    echo -e "    ${YELLOW}${basename_f}${NC} ${DIM}(${dep_name}, ${line_diffs} line diffs)${NC}"
+    ACTIONS+=("Run ${BOLD}${dep_cmd}${NC} to sync ${dep_name} dependencies")
+  fi
+done <<<"$changed"
 
 # ══════════════════════════════════════════════════════════════
 # 3. VERSION DETECTION — Universal
 # ══════════════════════════════════════════════════════════════
 
 detect_version() {
-    local new_version=""
+  local new_version=""
 
-    # package.json → "version": "x.y.z"
-    if [ -f "package.json" ] && echo "$changed" | grep -q 'package.json'; then
-        new_version=$(grep -oE '"version"\s*:\s*"[^"]+"' package.json 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  # package.json → "version": "x.y.z"
+  if [ -f "package.json" ] && echo "$changed" | grep -q 'package.json'; then
+    new_version=$(grep -oE '"version"\s*:\s*"[^"]+"' package.json 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  fi
+
+  # pyproject.toml → version = "x.y.z"
+  if [ -z "$new_version" ] && [ -f "pyproject.toml" ] && echo "$changed" | grep -q 'pyproject.toml'; then
+    new_version=$(grep -E '^version\s*=' pyproject.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  fi
+
+  # Cargo.toml → version = "x.y.z"
+  if [ -z "$new_version" ] && [ -f "Cargo.toml" ] && echo "$changed" | grep -q 'Cargo.toml'; then
+    new_version=$(grep -E '^version\s*=' Cargo.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  fi
+
+  # mix.exs → version: "x.y.z"
+  if [ -z "$new_version" ] && [ -f "mix.exs" ] && echo "$changed" | grep -q 'mix.exs'; then
+    new_version=$(grep -oE 'version:\s*"[^"]+"' mix.exs 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+  fi
+
+  # VERSION file
+  if [ -z "$new_version" ] && echo "$changed" | grep -qE '(^VERSION$|^VERSION\.txt$)'; then
+    new_version=$(cat VERSION 2>/dev/null || cat VERSION.txt 2>/dev/null || true)
+    new_version=$(echo "$new_version" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' | head -1)
+  fi
+
+  # build.gradle / build.gradle.kts → version = 'x.y.z'
+  if [ -z "$new_version" ]; then
+    for gradle_file in build.gradle build.gradle.kts; do
+      if [ -f "$gradle_file" ] && echo "$changed" | grep -q "$gradle_file"; then
+        new_version=$(grep -E "^version\s*=" "$gradle_file" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        [ -n "$new_version" ] && break
+      fi
+    done
+  fi
+
+  # .gemspec → s.version = "x.y.z"
+  if [ -z "$new_version" ]; then
+    gemspec=$(echo "$changed" | grep -E '\.gemspec$' | head -1)
+    if [ -n "$gemspec" ] && [ -f "$gemspec" ]; then
+      new_version=$(grep -oE "version\s*=\s*['\"][^'\"]+['\"]" "$gemspec" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     fi
+  fi
 
-    # pyproject.toml → version = "x.y.z"
-    if [ -z "$new_version" ] && [ -f "pyproject.toml" ] && echo "$changed" | grep -q 'pyproject.toml'; then
-        new_version=$(grep -E '^version\s*=' pyproject.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  # Go: version.go or version constant
+  if [ -z "$new_version" ]; then
+    version_go=$(echo "$changed" | grep -E 'version\.go$' | head -1)
+    if [ -n "$version_go" ] && [ -f "$version_go" ]; then
+      new_version=$(grep -oE 'Version\s*=\s*"[^"]+"' "$version_go" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     fi
+  fi
 
-    # Cargo.toml → version = "x.y.z"
-    if [ -z "$new_version" ] && [ -f "Cargo.toml" ] && echo "$changed" | grep -q 'Cargo.toml'; then
-        new_version=$(grep -E '^version\s*=' Cargo.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+  # Lua: version.lua (Neovim plugins, etc.)
+  if [ -z "$new_version" ]; then
+    version_lua=$(echo "$changed" | grep -E 'version\.lua$' | head -1)
+    if [ -n "$version_lua" ] && [ -f "$version_lua" ]; then
+      # Try: M.version = "x.y.z" or major/minor/patch fields
+      new_version=$(grep -oE 'version\s*=\s*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      if [ -z "$new_version" ]; then
+        local v_major v_minor v_patch
+        v_major=$(grep -E 'major\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_minor=$(grep -E 'minor\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_patch=$(grep -E 'patch\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        [ -n "$v_major" ] && [ -n "$v_minor" ] && [ -n "$v_patch" ] &&
+          new_version="${v_major}.${v_minor}.${v_patch}"
+      fi
     fi
+  fi
 
-    # mix.exs → version: "x.y.z"
-    if [ -z "$new_version" ] && [ -f "mix.exs" ] && echo "$changed" | grep -q 'mix.exs'; then
-        new_version=$(grep -oE 'version:\s*"[^"]+"' mix.exs 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-    fi
-
-    # VERSION file
-    if [ -z "$new_version" ] && echo "$changed" | grep -qE '(^VERSION$|^VERSION\.txt$)'; then
-        new_version=$(cat VERSION 2>/dev/null || cat VERSION.txt 2>/dev/null || true)
-        new_version=$(echo "$new_version" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^ ]*' | head -1)
-    fi
-
-    # build.gradle / build.gradle.kts → version = 'x.y.z'
-    if [ -z "$new_version" ]; then
-        for gradle_file in build.gradle build.gradle.kts; do
-            if [ -f "$gradle_file" ] && echo "$changed" | grep -q "$gradle_file"; then
-                new_version=$(grep -E "^version\s*=" "$gradle_file" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-                [ -n "$new_version" ] && break
-            fi
-        done
-    fi
-
-    # .gemspec → s.version = "x.y.z"
-    if [ -z "$new_version" ]; then
-        gemspec=$(echo "$changed" | grep -E '\.gemspec$' | head -1)
-        if [ -n "$gemspec" ] && [ -f "$gemspec" ]; then
-            new_version=$(grep -oE "version\s*=\s*['\"][^'\"]+['\"]" "$gemspec" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-        fi
-    fi
-
-    # Go: version.go or version constant
-    if [ -z "$new_version" ]; then
-        version_go=$(echo "$changed" | grep -E 'version\.go$' | head -1)
-        if [ -n "$version_go" ] && [ -f "$version_go" ]; then
-            new_version=$(grep -oE 'Version\s*=\s*"[^"]+"' "$version_go" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-        fi
-    fi
-
-    # Lua: version.lua (Neovim plugins, etc.)
-    if [ -z "$new_version" ]; then
-        version_lua=$(echo "$changed" | grep -E 'version\.lua$' | head -1)
-        if [ -n "$version_lua" ] && [ -f "$version_lua" ]; then
-            # Try: M.version = "x.y.z" or major/minor/patch fields
-            new_version=$(grep -oE 'version\s*=\s*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
-            if [ -z "$new_version" ]; then
-                local v_major v_minor v_patch
-                v_major=$(grep -E 'major\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-                v_minor=$(grep -E 'minor\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-                v_patch=$(grep -E 'patch\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-                [ -n "$v_major" ] && [ -n "$v_minor" ] && [ -n "$v_patch" ] && \
-                    new_version="${v_major}.${v_minor}.${v_patch}"
-            fi
-        fi
-    fi
-
-    echo "$new_version"
+  echo "$new_version"
 }
 
 new_ver=$(detect_version)
 if [ -n "$new_ver" ]; then
-    echo ""
-    echo -e "${GREEN}  🏷️  Version updated → ${BOLD}v${new_ver}${NC}"
+  echo ""
+  echo -e "${GREEN}  🏷️  Version updated → ${BOLD}v${new_ver}${NC}"
 fi
 
 # ══════════════════════════════════════════════════════════════
@@ -276,62 +276,62 @@ fi
 
 changelog_file=""
 for f in CHANGELOG.md CHANGELOG.rst CHANGES.md HISTORY.md; do
-    if echo "$changed" | grep -qi "^${f}$"; then
-        changelog_file="$f"
-        break
-    fi
+  if echo "$changed" | grep -qi "^${f}$"; then
+    changelog_file="$f"
+    break
+  fi
 done
 
 if [ -n "$changelog_file" ] && [ -f "$changelog_file" ]; then
-    echo ""
-    latest_entry=$(grep -m 1 -E '^## ' "$changelog_file" 2>/dev/null || true)
-    if [ -n "$latest_entry" ]; then
-        echo -e "${CYAN}  📋 ${changelog_file}: ${latest_entry}${NC}"
-    else
-        echo -e "${CYAN}  📋 ${changelog_file} updated${NC}"
-    fi
+  echo ""
+  latest_entry=$(grep -m 1 -E '^## ' "$changelog_file" 2>/dev/null || true)
+  if [ -n "$latest_entry" ]; then
+    echo -e "${CYAN}  📋 ${changelog_file}: ${latest_entry}${NC}"
+  else
+    echo -e "${CYAN}  📋 ${changelog_file} updated${NC}"
+  fi
 fi
 
 # ══════════════════════════════════════════════════════════════
 # 5. NEW / DELETED FILES SUMMARY
 # ══════════════════════════════════════════════════════════════
 
-new_files=$(git diff --name-only --diff-filter=A HEAD@{1} HEAD 2>/dev/null || true)
-del_files=$(git diff --name-only --diff-filter=D HEAD@{1} HEAD 2>/dev/null || true)
+new_files=$(git diff --name-only --diff-filter=A 'HEAD@{1}' HEAD 2>/dev/null || true)
+del_files=$(git diff --name-only --diff-filter=D 'HEAD@{1}' HEAD 2>/dev/null || true)
 
 if [ -n "$new_files" ]; then
-    new_count=$(echo "$new_files" | wc -l | tr -d ' ')
-    echo ""
-    echo -e "${GREEN}  ✨ ${new_count} new file(s):${NC}"
+  new_count=$(echo "$new_files" | wc -l | tr -d ' ')
+  echo ""
+  echo -e "${GREEN}  ✨ ${new_count} new file(s):${NC}"
 
-    # Group new files by extension for a compact view
-    declare -A new_by_ext
-    while IFS= read -r f; do
-        [ -z "$f" ] && continue
-        ext="${f##*.}"
-        [ "$ext" = "$f" ] && ext="(no ext)"
-        new_by_ext["$ext"]=$(( ${new_by_ext["$ext"]:-0} + 1 ))
-    done <<< "$new_files"
+  # Group new files by extension for a compact view
+  declare -A new_by_ext
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    ext="${f##*.}"
+    [ "$ext" = "$f" ] && ext="(no ext)"
+    new_by_ext["$ext"]=$((${new_by_ext["$ext"]:-0} + 1))
+  done <<<"$new_files"
 
-    for ext in $(for k in "${!new_by_ext[@]}"; do echo "${new_by_ext[$k]} $k"; done | sort -rn | awk '{print $2}'); do
-        echo -e "${DIM}    + ${new_by_ext[$ext]} .${ext} file(s)${NC}"
-    done
+  for ext in $(for k in "${!new_by_ext[@]}"; do echo "${new_by_ext[$k]} $k"; done | sort -rn | awk '{print $2}'); do
+    echo -e "${DIM}    + ${new_by_ext[$ext]} .${ext} file(s)${NC}"
+  done
 
-    # Show first few filenames
-    echo "$new_files" | head -5 | while IFS= read -r f; do
-        echo -e "${DIM}      $f${NC}"
-    done
-    [ "$new_count" -gt 5 ] && echo -e "${DIM}      ... and $((new_count - 5)) more${NC}"
+  # Show first few filenames
+  echo "$new_files" | head -5 | while IFS= read -r f; do
+    echo -e "${DIM}      $f${NC}"
+  done
+  [ "$new_count" -gt 5 ] && echo -e "${DIM}      ... and $((new_count - 5)) more${NC}"
 fi
 
 if [ -n "$del_files" ]; then
-    del_count=$(echo "$del_files" | wc -l | tr -d ' ')
-    echo ""
-    echo -e "${RED}  🗑️  ${del_count} file(s) removed${NC}"
-    echo "$del_files" | head -5 | while IFS= read -r f; do
-        echo -e "${DIM}    - $f${NC}"
-    done
-    [ "$del_count" -gt 5 ] && echo -e "${DIM}    ... and $((del_count - 5)) more${NC}"
+  del_count=$(echo "$del_files" | wc -l | tr -d ' ')
+  echo ""
+  echo -e "${RED}  🗑️  ${del_count} file(s) removed${NC}"
+  echo "$del_files" | head -5 | while IFS= read -r f; do
+    echo -e "${DIM}    - $f${NC}"
+  done
+  [ "$del_count" -gt 5 ] && echo -e "${DIM}    ... and $((del_count - 5)) more${NC}"
 fi
 
 # ══════════════════════════════════════════════════════════════
@@ -340,72 +340,75 @@ fi
 
 # Define patterns → [icon, description, action]
 declare -a CONFIG_TRIGGERS=(
-    # Docker
-    "Dockerfile|🐳|Dockerfile changed|Rebuild: docker compose build"
-    "docker-compose*.yml|🐳|Docker Compose changed|Restart: docker compose up -d"
-    "docker-compose*.yaml|🐳|Docker Compose changed|Restart: docker compose up -d"
-    # CI/CD
-    ".github/workflows/*|🤖|GitHub Actions workflow changed|CI pipeline updated"
-    ".gitlab-ci.yml|🤖|GitLab CI changed|CI pipeline updated"
-    ".circleci/*|🤖|CircleCI config changed|CI pipeline updated"
-    "Jenkinsfile|🤖|Jenkinsfile changed|CI pipeline updated"
-    # Terraform / IaC
-    "*.tf|🏗️ |Terraform files changed|Run: terraform plan"
-    # Database
-    "migrations/*|🗄️ |Database migrations changed|Run pending migrations"
-    "db/migrate/*|🗄️ |Rails migrations changed|Run: rails db:migrate"
-    "alembic/*|🗄️ |Alembic migrations changed|Run: alembic upgrade head"
-    # Environment
-    ".env.example|🔐|.env.example changed|Check your .env matches the new template"
-    ".envrc|🔐|.envrc changed|Run: direnv allow"
-    # Neovim (auto-detected, not hardcoded as primary)
-    "init.lua|🌙|init.lua changed|Restart Neovim"
-    # Makefile
-    "Makefile|⚡|Makefile changed|Review build targets"
-    "CMakeLists.txt|⚡|CMake config changed|Re-run: cmake .."
-    # Editor / tooling config
-    ".editorconfig|📐|EditorConfig changed|Reload editor"
-    ".prettierrc*|📐|Prettier config changed|Reformat: prettier --write ."
-    ".eslintrc*|📐|ESLint config changed|Review lint rules"
-    "tsconfig*.json|📐|TypeScript config changed|Restart TS server"
-    "stylua.toml|📐|StyLua config changed|Reformat: stylua ."
-    ".rustfmt.toml|📐|rustfmt config changed|Reformat: cargo fmt"
-    "pyproject.toml|📐|pyproject.toml changed|Check tool configs"
+  # Docker
+  "Dockerfile|🐳|Dockerfile changed|Rebuild: docker compose build"
+  "docker-compose*.yml|🐳|Docker Compose changed|Restart: docker compose up -d"
+  "docker-compose*.yaml|🐳|Docker Compose changed|Restart: docker compose up -d"
+  # CI/CD
+  ".github/workflows/*|🤖|GitHub Actions workflow changed|CI pipeline updated"
+  ".gitlab-ci.yml|🤖|GitLab CI changed|CI pipeline updated"
+  ".circleci/*|🤖|CircleCI config changed|CI pipeline updated"
+  "Jenkinsfile|🤖|Jenkinsfile changed|CI pipeline updated"
+  # Terraform / IaC
+  "*.tf|🏗️ |Terraform files changed|Run: terraform plan"
+  # Database
+  "migrations/*|🗄️ |Database migrations changed|Run pending migrations"
+  "db/migrate/*|🗄️ |Rails migrations changed|Run: rails db:migrate"
+  "alembic/*|🗄️ |Alembic migrations changed|Run: alembic upgrade head"
+  # Environment
+  ".env.example|🔐|.env.example changed|Check your .env matches the new template"
+  ".envrc|🔐|.envrc changed|Run: direnv allow"
+  # Neovim (auto-detected, not hardcoded as primary)
+  "init.lua|🌙|init.lua changed|Restart Neovim"
+  # Makefile
+  "Makefile|⚡|Makefile changed|Review build targets"
+  "CMakeLists.txt|⚡|CMake config changed|Re-run: cmake .."
+  # Editor / tooling config
+  ".editorconfig|📐|EditorConfig changed|Reload editor"
+  ".prettierrc*|📐|Prettier config changed|Reformat: prettier --write ."
+  ".eslintrc*|📐|ESLint config changed|Review lint rules"
+  "tsconfig*.json|📐|TypeScript config changed|Restart TS server"
+  "stylua.toml|📐|StyLua config changed|Reformat: stylua ."
+  ".rustfmt.toml|📐|rustfmt config changed|Reformat: cargo fmt"
+  "pyproject.toml|📐|pyproject.toml changed|Check tool configs"
 )
 
 config_changed=false
 for trigger in "${CONFIG_TRIGGERS[@]}"; do
-    IFS='|' read -r pattern icon desc action <<< "$trigger"
+  IFS='|' read -r pattern icon desc action <<<"$trigger"
 
-    # Match pattern against changed files
-    matched=false
-    while IFS= read -r f; do
-        [ -z "$f" ] && continue
-        # Support glob matching
-        # shellcheck disable=SC2254
-        case "$f" in
-            $pattern) matched=true; break ;;
-        esac
-    done <<< "$changed"
+  # Match pattern against changed files
+  matched=false
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    # Support glob matching
+    # shellcheck disable=SC2254
+    case "$f" in
+    $pattern)
+      matched=true
+      break
+      ;;
+    esac
+  done <<<"$changed"
 
-    if [ "$matched" = true ]; then
-        if [ "$config_changed" = false ]; then
-            echo ""
-            echo -e "${YELLOW}  🔄 Configuration changes detected:${NC}"
-            config_changed=true
-        fi
-        echo -e "    ${icon} ${desc}"
-        [ -n "$action" ] && [ "$action" != " " ] && \
-            ACTIONS+=("${action}")
+  if [ "$matched" = true ]; then
+    if [ "$config_changed" = false ]; then
+      echo ""
+      echo -e "${YELLOW}  🔄 Configuration changes detected:${NC}"
+      config_changed=true
     fi
+    echo -e "    ${icon} ${desc}"
+    [ -n "$action" ] && [ "$action" != " " ] &&
+      ACTIONS+=("${action}")
+  fi
 done
 
 # ══════════════════════════════════════════════════════════════
 # 7. COMMIT COUNT & AUTHORS
 # ══════════════════════════════════════════════════════════════
 
-commit_count=$(git rev-list --count HEAD@{1}..HEAD 2>/dev/null || echo "?")
-authors=$(git log HEAD@{1}..HEAD --format='%an' 2>/dev/null | sort -u | tr '\n' ', ' | sed 's/,$//' || true)
+commit_count=$(git rev-list --count 'HEAD@{1}'..HEAD 2>/dev/null || echo "?")
+authors=$(git log 'HEAD@{1}'..HEAD --format='%an' 2>/dev/null | sort -u | tr '\n' ', ' | sed 's/,$//' || true)
 
 echo ""
 echo -e "${DIM}  ─────────────────────────────────────────────${NC}"
@@ -417,20 +420,20 @@ echo -e "${DIM}  ${commit_count} commit(s) merged${NC}"
 # ══════════════════════════════════════════════════════════════
 
 if [ ${#ACTIONS[@]} -gt 0 ]; then
-    echo ""
-    echo -e "${CYAN}  📌 Recommended actions:${NC}"
-    action_num=0
-    # Deduplicate actions
-    declare -A seen_actions
-    for action in "${ACTIONS[@]}"; do
-        # Use plain text as key (strip formatting)
-        plain=$(echo -e "$action" | sed 's/\x1b\[[0-9;]*m//g')
-        if [ -z "${seen_actions[$plain]+x}" ]; then
-            seen_actions["$plain"]=1
-            action_num=$((action_num + 1))
-            echo -e "    ${YELLOW}${action_num}.${NC} ${action}"
-        fi
-    done
+  echo ""
+  echo -e "${CYAN}  📌 Recommended actions:${NC}"
+  action_num=0
+  # Deduplicate actions
+  declare -A seen_actions
+  for action in "${ACTIONS[@]}"; do
+    # Use plain text as key (strip formatting)
+    plain=$(echo -e "$action" | sed 's/\x1b\[[0-9;]*m//g')
+    if [ -z "${seen_actions[$plain]+x}" ]; then
+      seen_actions["$plain"]=1
+      action_num=$((action_num + 1))
+      echo -e "    ${YELLOW}${action_num}.${NC} ${action}"
+    fi
+  done
 fi
 
 echo ""

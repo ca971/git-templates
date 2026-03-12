@@ -40,24 +40,24 @@ warnings=0
 
 # ── Auto-skip: merge commits ────────────────────────────────
 if echo "$first_line" | grep -qE '^Merge (branch|remote-tracking|pull request)'; then
-    exit 0
+  exit 0
 fi
 
 # ── Auto-skip: WIP / fixup / squash (interactive rebase) ────
 if echo "$first_line" | grep -qiE '^(wip|fixup!|squash!|amend!)'; then
-    log_warn "WIP/fixup commit — remember to squash before pushing"
-    exit 0
+  log_warn "WIP/fixup commit — remember to squash before pushing"
+  exit 0
 fi
 
 # ── Auto-skip: git revert auto-generated messages ───────────
 if echo "$first_line" | grep -qE '^Revert "'; then
-    exit 0
+  exit 0
 fi
 
 # ── Validate: not empty ─────────────────────────────────────
 if [ -z "$(echo "$first_line" | tr -d '[:space:]')" ]; then
-    echo -e "${RED}🚫 Empty commit message${NC}"
-    exit 1
+  echo -e "${RED}🚫 Empty commit message${NC}"
+  exit 1
 fi
 
 # ── Validate: conventional commit format ─────────────────────
@@ -65,113 +65,113 @@ TYPES="feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert|release"
 pattern="^(${TYPES})(!)?(\(.+\))?: .{1,}"
 
 if ! echo "$first_line" | grep -qE "$pattern"; then
-    echo -e "${RED}🚫 Invalid commit message format${NC}"
-    echo ""
-    echo -e "  Expected: ${CYAN}<type>(<scope>): <subject>${NC}"
-    echo ""
-    echo -e "  ${BOLD}Types:${NC}"
-    echo -e "    ${GREEN}feat${NC}      New feature                    ${DIM}→ MINOR${NC}"
-    echo -e "    ${GREEN}fix${NC}       Bug fix                        ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}docs${NC}      Documentation only             ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}style${NC}     Formatting (no logic change)   ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}refactor${NC}  Code restructuring             ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}perf${NC}      Performance improvement        ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}test${NC}      Add/update tests               ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}build${NC}     Build system / dependencies    ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}ci${NC}        CI/CD pipeline changes         ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}chore${NC}     Maintenance tasks              ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}revert${NC}    Revert a previous commit       ${DIM}→ PATCH${NC}"
-    echo -e "    ${GREEN}release${NC}   Version release (tag+changelog)${DIM}→ TAG${NC}"
-    echo ""
-    echo -e "  ${BOLD}Breaking change:${NC} add ${CYAN}!${NC} after type"
-    echo -e "    ${GREEN}feat!: drop support for Node 14${NC}          ${DIM}→ MAJOR${NC}"
-    echo -e "    ${GREEN}refactor!(config): new settings format${NC}   ${DIM}→ MAJOR${NC}"
-    echo ""
-    echo -e "  ${BOLD}Your message:${NC}"
-    echo -e "    ${RED}${first_line}${NC}"
-    echo ""
-    echo -e "  ${BOLD}Examples:${NC}"
-    echo -e "    ${GREEN}feat(auth): add OAuth2 login flow${NC}"
-    echo -e "    ${GREEN}fix(api): resolve null pointer on empty response${NC}"
-    echo -e "    ${GREEN}docs: update installation guide${NC}"
-    echo -e "    ${GREEN}release: v1.1.0 — API refactor${NC}"
-    echo -e "    ${GREEN}feat!: redesign plugin architecture${NC}"
-    echo -e "    ${GREEN}chore(deps): bump axios to 1.7.0${NC}"
-    echo -e "    ${GREEN}test(utils): add edge case coverage${NC}"
-    echo ""
-    exit 1
+  echo -e "${RED}🚫 Invalid commit message format${NC}"
+  echo ""
+  echo -e "  Expected: ${CYAN}<type>(<scope>): <subject>${NC}"
+  echo ""
+  echo -e "  ${BOLD}Types:${NC}"
+  echo -e "    ${GREEN}feat${NC}      New feature                    ${DIM}→ MINOR${NC}"
+  echo -e "    ${GREEN}fix${NC}       Bug fix                        ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}docs${NC}      Documentation only             ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}style${NC}     Formatting (no logic change)   ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}refactor${NC}  Code restructuring             ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}perf${NC}      Performance improvement        ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}test${NC}      Add/update tests               ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}build${NC}     Build system / dependencies    ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}ci${NC}        CI/CD pipeline changes         ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}chore${NC}     Maintenance tasks              ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}revert${NC}    Revert a previous commit       ${DIM}→ PATCH${NC}"
+  echo -e "    ${GREEN}release${NC}   Version release (tag+changelog)${DIM}→ TAG${NC}"
+  echo ""
+  echo -e "  ${BOLD}Breaking change:${NC} add ${CYAN}!${NC} after type"
+  echo -e "    ${GREEN}feat!: drop support for Node 14${NC}          ${DIM}→ MAJOR${NC}"
+  echo -e "    ${GREEN}refactor!(config): new settings format${NC}   ${DIM}→ MAJOR${NC}"
+  echo ""
+  echo -e "  ${BOLD}Your message:${NC}"
+  echo -e "    ${RED}${first_line}${NC}"
+  echo ""
+  echo -e "  ${BOLD}Examples:${NC}"
+  echo -e "    ${GREEN}feat(auth): add OAuth2 login flow${NC}"
+  echo -e "    ${GREEN}fix(api): resolve null pointer on empty response${NC}"
+  echo -e "    ${GREEN}docs: update installation guide${NC}"
+  echo -e "    ${GREEN}release: v1.1.0 — API refactor${NC}"
+  echo -e "    ${GREEN}feat!: redesign plugin architecture${NC}"
+  echo -e "    ${GREEN}chore(deps): bump axios to 1.7.0${NC}"
+  echo -e "    ${GREEN}test(utils): add edge case coverage${NC}"
+  echo ""
+  exit 1
 fi
 
 # ── Validate: subject length ────────────────────────────────
 subject_length=${#first_line}
 if [ "$subject_length" -gt "$SUBJECT_MAX_LENGTH" ]; then
-    log_warn "Subject is ${subject_length} chars (recommended: ≤ ${SUBJECT_MAX_LENGTH})"
-    echo -e "    ${DIM}${first_line}${NC}"
-    echo -e "    ${DIM}$(printf '%*s' "$SUBJECT_MAX_LENGTH" | tr ' ' '─')${RED}↑ here${NC}"
-    warnings=$((warnings + 1))
+  log_warn "Subject is ${subject_length} chars (recommended: ≤ ${SUBJECT_MAX_LENGTH})"
+  echo -e "    ${DIM}${first_line}${NC}"
+  echo -e "    ${DIM}$(printf '%*s' "$SUBJECT_MAX_LENGTH" "" | tr ' ' '─')${RED}↑ here${NC}"
+  warnings=$((warnings + 1))
 fi
 
 # ── Validate: no trailing period ─────────────────────────────
 if echo "$first_line" | grep -qE '\.$'; then
-    log_warn "Subject should not end with a period"
-    warnings=$((warnings + 1))
+  log_warn "Subject should not end with a period"
+  warnings=$((warnings + 1))
 fi
 
 # ── Validate: imperative mood ────────────────────────────────
 subject=$(echo "$first_line" | sed -E 's/^[^:]+: //')
 if echo "$subject" | grep -qiE '^(added|fixed|removed|updated|changed|deleted|created|implemented|modified)'; then
-    log_warn "Use imperative mood: \"add\" not \"added\", \"fix\" not \"fixed\""
-    warnings=$((warnings + 1))
+  log_warn "Use imperative mood: \"add\" not \"added\", \"fix\" not \"fixed\""
+  warnings=$((warnings + 1))
 fi
 
 # ── Validate: second line must be blank (if body exists) ────
 if [ "$line_count" -gt 1 ]; then
-    second_line=$(echo "$commit_msg" | sed -n '2p')
-    if [ -n "$(echo "$second_line" | tr -d '[:space:]')" ]; then
-        log_warn "Second line should be blank (separates subject from body)"
-        warnings=$((warnings + 1))
-    fi
+  second_line=$(echo "$commit_msg" | sed -n '2p')
+  if [ -n "$(echo "$second_line" | tr -d '[:space:]')" ]; then
+    log_warn "Second line should be blank (separates subject from body)"
+    warnings=$((warnings + 1))
+  fi
 fi
 
 # ── Validate: body line length ───────────────────────────────
 if [ "$line_count" -gt 2 ]; then
-    long_lines=0
-    line_num=0
-    while IFS= read -r line; do
-        line_num=$((line_num + 1))
-        [ "$line_num" -le 2 ] && continue
-        echo "$line" | grep -qE 'https?://' && continue
-        if [ "${#line}" -gt "$BODY_MAX_LENGTH" ]; then
-            long_lines=$((long_lines + 1))
-        fi
-    done <<< "$commit_msg"
-
-    if [ "$long_lines" -gt 0 ]; then
-        log_warn "${long_lines} body line(s) exceed ${BODY_MAX_LENGTH} chars"
-        warnings=$((warnings + 1))
+  long_lines=0
+  line_num=0
+  while IFS= read -r line; do
+    line_num=$((line_num + 1))
+    [ "$line_num" -le 2 ] && continue
+    echo "$line" | grep -qE 'https?://' && continue
+    if [ "${#line}" -gt "$BODY_MAX_LENGTH" ]; then
+      long_lines=$((long_lines + 1))
     fi
+  done <<<"$commit_msg"
+
+  if [ "$long_lines" -gt 0 ]; then
+    log_warn "${long_lines} body line(s) exceed ${BODY_MAX_LENGTH} chars"
+    warnings=$((warnings + 1))
+  fi
 fi
 
 # ── Detect: breaking change in footer ────────────────────────
 if echo "$commit_msg" | grep -qE '^BREAKING[ -]CHANGE:'; then
-    log_info "Breaking change detected in footer — MAJOR bump"
+  log_info "Breaking change detected in footer — MAJOR bump"
 fi
 
 # ── Detect: breaking change marker (!) ───────────────────────
 if echo "$first_line" | grep -qE "^(${TYPES})!"; then
-    log_info "Breaking change marker (!) — MAJOR bump"
+  log_info "Breaking change marker (!) — MAJOR bump"
 fi
 
 # ── Strict mode: warnings become errors ──────────────────────
 if [ "$warnings" -gt 0 ] && [ "$STRICT_WARNINGS" = "true" ]; then
-    echo -e "${RED}🚫 ${warnings} warning(s) in strict mode — commit blocked${NC}"
-    echo -e "${DIM}   Disable with: SKIP_COMMIT_MSG=1 or strict_warnings=false in .githooks.conf${NC}"
-    exit 1
+  echo -e "${RED}🚫 ${warnings} warning(s) in strict mode — commit blocked${NC}"
+  echo -e "${DIM}   Disable with: SKIP_COMMIT_MSG=1 or strict_warnings=false in .githooks.conf${NC}"
+  exit 1
 fi
 
 # ── Success ──────────────────────────────────────────────────
 if [ "$warnings" -eq 0 ]; then
-    echo -e "${GREEN}✅ Commit message valid${NC}"
+  echo -e "${GREEN}✅ Commit message valid${NC}"
 else
-    echo -e "${GREEN}✅ Commit message valid${NC} ${DIM}(${warnings} warning(s))${NC}"
+  echo -e "${GREEN}✅ Commit message valid${NC} ${DIM}(${warnings} warning(s))${NC}"
 fi
