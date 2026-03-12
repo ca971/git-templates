@@ -1,0 +1,15 @@
+# ╔══════════════════════════════════════════════════════════════╗
+# ║  .github/FUNDING.yml — Sponsor links for ca971/git-templates ║
+# ╚══════════════════════════════════════════════════════════════╝
+# Prerequisite: You must enable GitHub Sponsors on your profile via github.com/sponsors for the button to work.
+# FUNDING.yml will display the button even without registration, but the link will redirect to the Sponsors registration page.
+#
+# GitHub Sponsors
+github: [ca971]
+
+# Other platforms (uncomment and fill as needed)
+# patreon: ca971
+# open_collective: ca971
+# ko_fi: ca971
+# buy_me_a_coffee: ca971
+# custom: ["https://your-link.com"]
