@@ -194,22 +194,22 @@ detect_version() {
 
   # package.json → "version": "x.y.z"
   if [ -f "package.json" ] && echo "$changed" | grep -q 'package.json'; then
-    new_version=$(grep -oE '"version"\s*:\s*"[^"]+"' package.json 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+    new_version=$(grep -oE '"version"[[:space:]]*:[[:space:]]*"[^"]+"' package.json 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
   fi
 
   # pyproject.toml → version = "x.y.z"
   if [ -z "$new_version" ] && [ -f "pyproject.toml" ] && echo "$changed" | grep -q 'pyproject.toml'; then
-    new_version=$(grep -E '^version\s*=' pyproject.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+    new_version=$(grep -E '^version[[:space:]]*=' pyproject.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
   fi
 
   # Cargo.toml → version = "x.y.z"
   if [ -z "$new_version" ] && [ -f "Cargo.toml" ] && echo "$changed" | grep -q 'Cargo.toml'; then
-    new_version=$(grep -E '^version\s*=' Cargo.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
+    new_version=$(grep -E '^version[[:space:]]*=' Cargo.toml 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[^"]*')
   fi
 
   # mix.exs → version: "x.y.z"
   if [ -z "$new_version" ] && [ -f "mix.exs" ] && echo "$changed" | grep -q 'mix.exs'; then
-    new_version=$(grep -oE 'version:\s*"[^"]+"' mix.exs 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+    new_version=$(grep -oE 'version:[[:space:]]*"[^"]+"' mix.exs 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
   fi
 
   # VERSION file
@@ -222,7 +222,7 @@ detect_version() {
   if [ -z "$new_version" ]; then
     for gradle_file in build.gradle build.gradle.kts; do
       if [ -f "$gradle_file" ] && echo "$changed" | grep -q "$gradle_file"; then
-        new_version=$(grep -E "^version\s*=" "$gradle_file" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        new_version=$(grep -E "^version[[:space:]]*=" "$gradle_file" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
         [ -n "$new_version" ] && break
       fi
     done
@@ -232,7 +232,7 @@ detect_version() {
   if [ -z "$new_version" ]; then
     gemspec=$(echo "$changed" | grep -E '\.gemspec$' | head -1)
     if [ -n "$gemspec" ] && [ -f "$gemspec" ]; then
-      new_version=$(grep -oE "version\s*=\s*['\"][^'\"]+['\"]" "$gemspec" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      new_version=$(grep -oE "version[[:space:]]*=[[:space:]]*['\"][^'\"]+['\"]" "$gemspec" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     fi
   fi
 
@@ -240,7 +240,7 @@ detect_version() {
   if [ -z "$new_version" ]; then
     version_go=$(echo "$changed" | grep -E 'version\.go$' | head -1)
     if [ -n "$version_go" ] && [ -f "$version_go" ]; then
-      new_version=$(grep -oE 'Version\s*=\s*"[^"]+"' "$version_go" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      new_version=$(grep -oE 'Version[[:space:]]*=[[:space:]]*"[^"]+"' "$version_go" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
     fi
   fi
 
@@ -249,12 +249,12 @@ detect_version() {
     version_lua=$(echo "$changed" | grep -E 'version\.lua$' | head -1)
     if [ -n "$version_lua" ] && [ -f "$version_lua" ]; then
       # Try: M.version = "x.y.z" or major/minor/patch fields
-      new_version=$(grep -oE 'version\s*=\s*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      new_version=$(grep -oE 'version[[:space:]]*=[[:space:]]*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
       if [ -z "$new_version" ]; then
         local v_major v_minor v_patch
-        v_major=$(grep -E 'major\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-        v_minor=$(grep -E 'minor\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-        v_patch=$(grep -E 'patch\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_major=$(grep -E 'major[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_minor=$(grep -E 'minor[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_patch=$(grep -E 'patch[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
         [ -n "$v_major" ] && [ -n "$v_minor" ] && [ -n "$v_patch" ] &&
           new_version="${v_major}.${v_minor}.${v_patch}"
       fi

@@ -398,10 +398,10 @@ if [ "$pushing_tag" = true ]; then
 
   # Map: file → grep pattern → extract pattern
   declare -A VERSION_FILES=(
-    ["package.json"]='"version"\s*:\s*"'
-    ["pyproject.toml"]='^version\s*='
-    ["Cargo.toml"]='^version\s*='
-    ["mix.exs"]='version:\s*"'
+    ["package.json"]='"version"[[:space:]]*:[[:space:]]*"'
+    ["pyproject.toml"]='^version[[:space:]]*='
+    ["Cargo.toml"]='^version[[:space:]]*='
+    ["mix.exs"]='version:[[:space:]]*"'
     ["VERSION"]='^'
     ["VERSION.txt"]='^'
   )
@@ -418,11 +418,11 @@ if [ "$pushing_tag" = true ]; then
   if [ -z "$detected_version" ]; then
     version_lua=$(git ls-files '**/version.lua' 'version.lua' 2>/dev/null | head -1)
     if [ -n "$version_lua" ] && [ -f "$version_lua" ]; then
-      detected_version=$(grep -oE 'version\s*=\s*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+      detected_version=$(grep -oE 'version[[:space:]]*=[[:space:]]*"[^"]+"' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
       if [ -z "$detected_version" ]; then
-        v_major=$(grep -E 'major\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-        v_minor=$(grep -E 'minor\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
-        v_patch=$(grep -E 'patch\s*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_major=$(grep -E 'major[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_minor=$(grep -E 'minor[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
+        v_patch=$(grep -E 'patch[[:space:]]*=' "$version_lua" 2>/dev/null | head -1 | grep -oE '[0-9]+')
         [ -n "$v_major" ] && [ -n "$v_minor" ] && [ -n "$v_patch" ] &&
           detected_version="${v_major}.${v_minor}.${v_patch}"
       fi
@@ -433,7 +433,7 @@ if [ "$pushing_tag" = true ]; then
   if [ -z "$detected_version" ]; then
     for gf in build.gradle build.gradle.kts; do
       if [ -f "$gf" ]; then
-        detected_version=$(grep -E "^version\s*=" "$gf" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
+        detected_version=$(grep -E "^version[[:space:]]*=" "$gf" 2>/dev/null | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+')
         [ -n "$detected_version" ] && break
       fi
     done
