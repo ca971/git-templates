@@ -12,6 +12,7 @@
 # ║    bash install.sh --check      # verify installation        ║
 # ║    bash install.sh --update     # update to latest           ║
 # ╚══════════════════════════════════════════════════════════════╝
+#
 
 set -euo pipefail
 
