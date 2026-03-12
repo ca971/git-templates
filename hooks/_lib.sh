@@ -36,6 +36,78 @@ command_exists() {
   command -v "$1" &>/dev/null
 }
 
+# ── Platform detection ─────────────────────────────────────────
+# Detect once, use everywhere
+OS_TYPE="unknown"
+case "$(uname -s)" in
+Darwin*) OS_TYPE="macos" ;;
+Linux*) OS_TYPE="linux" ;;
+MINGW* | MSYS* | CYGWIN*) OS_TYPE="windows" ;;
+esac
+
+# ── Cross-platform wrappers ───────────────────────────────────
+
+# Human-readable file size (bytes → KB/MB/GB)
+human_size() {
+  local bytes="$1"
+  if command_exists numfmt; then
+    # GNU coreutils (Linux)
+    numfmt --to=iec "$bytes" 2>/dev/null
+  elif command_exists gnumfmt; then
+    # Homebrew coreutils on macOS
+    gnumfmt --to=iec "$bytes" 2>/dev/null
+  else
+    # Pure bash fallback (works everywhere)
+    if [ "$bytes" -ge 1073741824 ]; then
+      echo "$((bytes / 1073741824))GB"
+    elif [ "$bytes" -ge 1048576 ]; then
+      echo "$((bytes / 1048576))MB"
+    elif [ "$bytes" -ge 1024 ]; then
+      echo "$((bytes / 1024))KB"
+    else
+      echo "${bytes}B"
+    fi
+  fi
+}
+
+# File size in bytes (cross-platform stat)
+file_size() {
+  local file="$1"
+  if [ "$OS_TYPE" = "macos" ]; then
+    stat -f%z "$file" 2>/dev/null || echo 0
+  else
+    stat -c%s "$file" 2>/dev/null || wc -c <"$file" 2>/dev/null || echo 0
+  fi
+}
+
+# In-place sed (cross-platform)
+# Usage: sed_inplace 's/foo/bar/' file.txt
+sed_inplace() {
+  if [ "$OS_TYPE" = "macos" ]; then
+    sed -i '' "$@"
+  else
+    sed -i "$@"
+  fi
+}
+
+# Portable mktemp
+# Usage: tmpfile=$(make_temp "hookcheck")
+make_temp() {
+  local prefix="${1:-githook}"
+  if [ "$OS_TYPE" = "macos" ]; then
+    mktemp -t "$prefix"
+  else
+    mktemp --suffix=".${prefix}"
+  fi
+}
+
+# Extended grep (safe — always use POSIX classes)
+# Wrapper that ensures we never use GNU-only features
+grep_safe() {
+  # Force POSIX locale for consistent behavior
+  LC_ALL=C grep "$@"
+}
+
 # ── File detection (staged or all) ────────────────────────────
 # Usage: has_staged_files "lua" "py" "js"
 has_staged_files() {

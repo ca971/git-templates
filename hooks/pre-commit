@@ -137,23 +137,17 @@ fi
 # ══════════════════════════════════════════════════════════════
 # 3. LARGE FILES (blocks)
 # ══════════════════════════════════════════════════════════════
-
 large_found=false
 while IFS= read -r f; do
   [ -z "$f" ] && continue
   [ -f "$f" ] || continue
-  size=$(wc -c <"$f" 2>/dev/null || echo 0)
+  size=$(file_size "$f")
   if [ "$size" -gt "$MAX_FILE_SIZE" ]; then
     if [ "$large_found" = false ]; then
       large_found=true
       error "Large files:"
     fi
-    if command_exists numfmt; then
-      human=$(numfmt --to=iec "$size" 2>/dev/null)
-    else
-      human="$((size / 1048576))MB"
-    fi
-    info "$f ($human)"
+    info "$f ($(human_size "$size"))"
   fi
 done <<<"$STAGED"
 [ "$large_found" = false ] && ok "No large files"
