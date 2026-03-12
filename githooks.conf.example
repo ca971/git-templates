@@ -1,0 +1,33 @@
+# ═══════════════════════════════════════════
+# Repo: dev-notes (markdown/docs only)
+# ═══════════════════════════════════════════
+[pre-commit]
+disable = stylua,shellcheck,ruff,eslint,prettier
+
+[pre-push]
+disable = stylua,lua-syntax,ruff,eslint,prettier,tsc
+run_tests = false
+
+# ═══════════════════════════════════════════
+# Repo: nvim-enterprise (Lua)
+# ═══════════════════════════════════════════
+[pre-commit]
+debug_markers_block = true
+
+[pre-push]
+run_tests = false
+
+# ═══════════════════════════════════════════
+# Repo: api-backend (Python + Docker)
+# ═══════════════════════════════════════════
+[pre-push]
+run_tests = true
+test_command = pytest --quiet -x
+protected_branches = main,staging,production
+
+# ═══════════════════════════════════════════
+# Repo: frontend-app (TypeScript + React)
+# ═══════════════════════════════════════════
+[pre-push]
+run_tests = true
+test_command = npm test -- --watchAll=false
