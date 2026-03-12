@@ -279,6 +279,7 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
 CYAN='\033[0;36m'
+# shellcheck disable=SC2034
 BLUE='\033[0;34m'
 BOLD='\033[1m'
 DIM='\033[2m'
@@ -416,7 +417,8 @@ should_skip_hook() {
   fi
 
   # Per-hook env: SKIP_COMMIT_MSG=1, SKIP_PRE_COMMIT=1, etc.
-  local env_key="SKIP_$(echo "$hook_name" | tr '-' '_' | tr '[:lower:]' '[:upper:]')"
+  local env_key
+  env_key="SKIP_$(echo "$hook_name" | tr '-' '_' | tr '[:lower:]' '[:upper:]')"
   if [ "${!env_key:-}" = "1" ]; then
     echo -e "${DIM}⊘ ${hook_name} hook skipped (${env_key}=1)${NC}"
     return 0
@@ -2474,7 +2476,7 @@ fi
 EXAMPLE_CONF="${TEMPLATE_DIR}/githooks.conf.example"
 cat >"$EXAMPLE_CONF" <<'CONFEOF'
 # ╔══════════════════════════════════════════════════════════════╗
-# ║  .githooks.conf — Per-repo hook configuration               ║
+# ║  .githooks.conf — Per-repo hook configuration                ║
 # ║                                                              ║
 # ║  Place this file at your repo root as .githooks.conf         ║
 # ║  Lines starting with # are comments                          ║
