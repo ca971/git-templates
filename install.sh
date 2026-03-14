@@ -46,16 +46,16 @@ LOCAL=false
 
 for arg in "$@"; do
   case "$arg" in
-  --force) FORCE=true ;;
-  --uninstall) MODE="uninstall" ;;
-  --check) MODE="check" ;;
-  --update) MODE="update" ;;
-  --local) LOCAL=true ;;
-  --help | -h) MODE="help" ;;
-  *)
-    fail "Unknown option: $arg"
-    exit 1
-    ;;
+    --force) FORCE=true ;;
+    --uninstall) MODE="uninstall" ;;
+    --check) MODE="check" ;;
+    --update) MODE="update" ;;
+    --local) LOCAL=true ;;
+    --help | -h) MODE="help" ;;
+    *)
+      fail "Unknown option: $arg"
+      exit 1
+      ;;
   esac
 done
 
@@ -72,7 +72,7 @@ fi
 # ══════════════════════════════════════════════════════════════
 
 if [ "$MODE" = "help" ]; then
-  cat <<'EOF'
+  cat << 'EOF'
 
   Git Hooks Template Installer
   ────────────────────────────
@@ -114,7 +114,7 @@ if [ "$MODE" = "check" ]; then
   check_errors=0
 
   # Check git config
-  template_config=$(git config --global init.templateDir 2>/dev/null || true)
+  template_config=$(git config --global init.templateDir 2> /dev/null || true)
   if [ "$template_config" = "$TEMPLATE_DIR" ]; then
     success "git config init.templateDir = ${template_config}"
   elif [ -n "$template_config" ]; then
@@ -138,7 +138,7 @@ if [ "$MODE" = "check" ]; then
     hook_path="${HOOKS_DIR}/${hook}"
     if [ -f "$hook_path" ]; then
       if [ -x "$hook_path" ]; then
-        size=$(wc -c <"$hook_path" | tr -d ' ')
+        size=$(wc -c < "$hook_path" | tr -d ' ')
         success "${hook} (${size} bytes, executable)"
       else
         warn "${hook} exists but not executable"
@@ -172,9 +172,9 @@ if [ "$MODE" = "check" ]; then
     "taplo:TOML formatting"
   )
   for tool_entry in "${tools[@]}"; do
-    IFS=':' read -r tool desc <<<"$tool_entry"
-    if command -v "$tool" &>/dev/null; then
-      version=$($tool --version 2>/dev/null | head -1 || echo "?")
+    IFS=':' read -r tool desc <<< "$tool_entry"
+    if command -v "$tool" &> /dev/null; then
+      version=$($tool --version 2> /dev/null | head -1 || echo "?")
       success "${tool} — ${desc} ${DIM}(${version})${NC}"
     else
       echo -e "  ${DIM}○ ${tool} — ${desc} (not installed)${NC}"
@@ -208,8 +208,8 @@ if [ "$MODE" = "uninstall" ]; then
       }
     fi
 
-    cp -r "$TEMPLATE_DIR" "$BACKUP_DIR" 2>/dev/null &&
-      success "Backed up to ${BACKUP_DIR}" || true
+    cp -r "$TEMPLATE_DIR" "$BACKUP_DIR" 2> /dev/null \
+      && success "Backed up to ${BACKUP_DIR}" || true
 
     rm -rf "$HOOKS_DIR"
     success "Removed ${HOOKS_DIR}"
@@ -217,7 +217,7 @@ if [ "$MODE" = "uninstall" ]; then
     warn "Hooks directory not found — nothing to remove"
   fi
 
-  if git config --global --get init.templateDir &>/dev/null; then
+  if git config --global --get init.templateDir &> /dev/null; then
     git config --global --unset init.templateDir
     success "Removed git config init.templateDir"
   fi
@@ -291,7 +291,7 @@ for hook in "${HOOK_FILES[@]}"; do
     if [ -f "${LOCAL_HOOKS_DIR}/${hook}" ]; then
       cp -f "${LOCAL_HOOKS_DIR}/${hook}" "${HOOKS_DIR}/${hook}"
       chmod +x "${HOOKS_DIR}/${hook}"
-      size=$(wc -c <"${HOOKS_DIR}/${hook}" | tr -d ' ')
+      size=$(wc -c < "${HOOKS_DIR}/${hook}" | tr -d ' ')
       success "${hook} (${size} bytes)"
     else
       fail "${hook} not found in ${LOCAL_HOOKS_DIR}"
@@ -299,9 +299,9 @@ for hook in "${HOOK_FILES[@]}"; do
     fi
   else
     # ── Remote download ───────────────────────────────────
-    if curl -fsSL "${REPO_URL}/hooks/${hook}" -o "${HOOKS_DIR}/${hook}" 2>/dev/null; then
+    if curl -fsSL "${REPO_URL}/hooks/${hook}" -o "${HOOKS_DIR}/${hook}" 2> /dev/null; then
       chmod +x "${HOOKS_DIR}/${hook}"
-      size=$(wc -c <"${HOOKS_DIR}/${hook}" | tr -d ' ')
+      size=$(wc -c < "${HOOKS_DIR}/${hook}" | tr -d ' ')
       success "${hook} (${size} bytes, downloaded)"
     else
       fail "${hook} — download failed"
@@ -324,7 +324,7 @@ fi
 header "⚙️  Configuring git..."
 echo ""
 
-current_template=$(git config --global init.templateDir 2>/dev/null || true)
+current_template=$(git config --global init.templateDir 2> /dev/null || true)
 
 if [ "$current_template" = "$TEMPLATE_DIR" ]; then
   success "init.templateDir already set"
@@ -346,9 +346,9 @@ if [ "$SOURCE" = "local" ] && [ -f "${SCRIPT_DIR}/githooks.conf.example" ]; then
   cp -f "${SCRIPT_DIR}/githooks.conf.example" "$EXAMPLE_CONF"
 else
   # Download or generate
-  if ! curl -fsSL "${REPO_URL}/githooks.conf.example" -o "$EXAMPLE_CONF" 2>/dev/null; then
+  if ! curl -fsSL "${REPO_URL}/githooks.conf.example" -o "$EXAMPLE_CONF" 2> /dev/null; then
     # Fallback: generate minimal config
-    cat >"$EXAMPLE_CONF" <<'CONFEOF'
+    cat > "$EXAMPLE_CONF" << 'CONFEOF'
 # ╔══════════════════════════════════════════════════════════════╗
 # ║  .githooks.conf — Per-repo hook configuration                ║
 # ║  Place this file at your repo root as .githooks.conf         ║

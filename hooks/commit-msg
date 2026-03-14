@@ -144,7 +144,7 @@ if [ "$line_count" -gt 2 ]; then
     if [ "${#line}" -gt "$BODY_MAX_LENGTH" ]; then
       long_lines=$((long_lines + 1))
     fi
-  done <<<"$commit_msg"
+  done <<< "$commit_msg"
 
   if [ "$long_lines" -gt 0 ]; then
     log_warn "${long_lines} body line(s) exceed ${BODY_MAX_LENGTH} chars"

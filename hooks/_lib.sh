@@ -33,16 +33,16 @@ log_title() { echo -e "${BOLD}$*${NC}"; }
 
 # ── Tool detection ─────────────────────────────────────────────
 command_exists() {
-  command -v "$1" &>/dev/null
+  command -v "$1" &> /dev/null
 }
 
 # ── Platform detection ─────────────────────────────────────────
 # Detect once, use everywhere
 OS_TYPE="unknown"
 case "$(uname -s)" in
-Darwin*) OS_TYPE="macos" ;;
-Linux*) OS_TYPE="linux" ;;
-MINGW* | MSYS* | CYGWIN*) OS_TYPE="windows" ;;
+  Darwin*) OS_TYPE="macos" ;;
+  Linux*) OS_TYPE="linux" ;;
+  MINGW* | MSYS* | CYGWIN*) OS_TYPE="windows" ;;
 esac
 
 # ── Cross-platform wrappers ───────────────────────────────────
@@ -52,10 +52,10 @@ human_size() {
   local bytes="$1"
   if command_exists numfmt; then
     # GNU coreutils (Linux)
-    numfmt --to=iec "$bytes" 2>/dev/null
+    numfmt --to=iec "$bytes" 2> /dev/null
   elif command_exists gnumfmt; then
     # Homebrew coreutils on macOS
-    gnumfmt --to=iec "$bytes" 2>/dev/null
+    gnumfmt --to=iec "$bytes" 2> /dev/null
   else
     # Pure bash fallback (works everywhere)
     if [ "$bytes" -ge 1073741824 ]; then
@@ -74,9 +74,9 @@ human_size() {
 file_size() {
   local file="$1"
   if [ "$OS_TYPE" = "macos" ]; then
-    stat -f%z "$file" 2>/dev/null || echo 0
+    stat -f%z "$file" 2> /dev/null || echo 0
   else
-    stat -c%s "$file" 2>/dev/null || wc -c <"$file" 2>/dev/null || echo 0
+    stat -c%s "$file" 2> /dev/null || wc -c < "$file" 2> /dev/null || echo 0
   fi
 }
 
@@ -113,7 +113,7 @@ grep_safe() {
 has_staged_files() {
   local ext
   for ext in "$@"; do
-    if git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -qE "\.${ext}$"; then
+    if git diff --cached --name-only --diff-filter=ACMR 2> /dev/null | grep -qE "\.${ext}$"; then
       return 0
     fi
   done
@@ -127,14 +127,14 @@ get_staged_files() {
     [ -n "$pattern" ] && pattern="${pattern}|"
     pattern="${pattern}\\.${ext}$"
   done
-  git diff --cached --name-only --diff-filter=ACMR 2>/dev/null | grep -E "$pattern" || true
+  git diff --cached --name-only --diff-filter=ACMR 2> /dev/null | grep -E "$pattern" || true
 }
 
 # Usage: has_repo_files "lua" "py" "js"
 has_repo_files() {
   local ext
   for ext in "$@"; do
-    if git ls-files 2>/dev/null | grep -qE "\.${ext}$"; then
+    if git ls-files 2> /dev/null | grep -qE "\.${ext}$"; then
       return 0
     fi
   done
@@ -148,7 +148,7 @@ get_repo_files() {
     [ -n "$pattern" ] && pattern="${pattern}|"
     pattern="${pattern}\\.${ext}$"
   done
-  git ls-files 2>/dev/null | grep -E "$pattern" || true
+  git ls-files 2> /dev/null | grep -E "$pattern" || true
 }
 
 # ── Config system ─────────────────────────────────────────────
@@ -172,7 +172,7 @@ get_repo_files() {
 #   [global]
 #   skip_all = false
 
-GITHOOKS_CONF="$(git rev-parse --show-toplevel 2>/dev/null)/.githooks.conf"
+GITHOOKS_CONF="$(git rev-parse --show-toplevel 2> /dev/null)/.githooks.conf"
 
 # Read a value from .githooks.conf
 # Usage: githooks_config "commit-msg" "subject_max_length" "72"
@@ -209,7 +209,7 @@ githooks_config() {
           return
         fi
       fi
-    done <"$GITHOOKS_CONF"
+    done < "$GITHOOKS_CONF"
   fi
 
   echo "$default"

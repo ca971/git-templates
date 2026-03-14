@@ -97,14 +97,14 @@ checker_on() {
 
 debug_pattern='(TODO:|FIXME:|HACK:|XXX:|BUG:|TEMP:|console\.log|console\.debug|debugger|binding\.pry|import pdb|breakpoint\(\)|dbg!|dd\(|var_dump|die\()'
 
-debug_matches=$(git diff --cached --diff-filter=ACM |
-  grep '^+' |
-  grep -v '^+++' |
-  grep -E "$debug_pattern" 2>/dev/null |
-  grep -vE "(_pattern=|pattern=|pattern '|grep|echo -e|log_|printf|info\(|warn\(|ok\(|error\()" |
-  grep -vE "(✓|✗|→|⚠|ℹ)" |
-  grep -vE "(['\"]TODO|['\"]FIXME|['\"]console|['\"]debugger|['\"]breakpoint)" ||
-  true)
+debug_matches=$(git diff --cached --diff-filter=ACM \
+  | grep '^+' \
+  | grep -v '^+++' \
+  | grep -E "$debug_pattern" 2> /dev/null \
+  | grep -vE "(_pattern=|pattern=|pattern '|grep|echo -e|log_|printf|info\(|warn\(|ok\(|error\()" \
+  | grep -vE "(✓|✗|→|⚠|ℹ)" \
+  | grep -vE "(['\"]TODO|['\"]FIXME|['\"]console|['\"]debugger|['\"]breakpoint)" \
+  || true)
 
 if [ -n "$debug_matches" ]; then
   count=$(echo "$debug_matches" | wc -l | tr -d ' ')
@@ -149,7 +149,7 @@ while IFS= read -r f; do
     fi
     info "$f ($(human_size "$size"))"
   fi
-done <<<"$STAGED"
+done <<< "$STAGED"
 [ "$large_found" = false ] && ok "No large files"
 
 # ══════════════════════════════════════════════════════════════
@@ -174,7 +174,7 @@ secrets_patterns=(
 
 secrets_found=false
 for p in "${secrets_patterns[@]}"; do
-  m=$(git diff --cached --diff-filter=ACM | grep -iE "$p" 2>/dev/null | grep '^+' | grep -v '^+++' | grep -vE "(pattern|grep|secrets_patterns)" || true)
+  m=$(git diff --cached --diff-filter=ACM | grep -iE "$p" 2> /dev/null | grep '^+' | grep -v '^+++' | grep -vE "(pattern|grep|secrets_patterns)" || true)
   if [ -n "$m" ]; then
     if [ "$secrets_found" = false ]; then
       secrets_found=true
@@ -221,7 +221,7 @@ fi
 # 7. TRAILING WHITESPACE
 # ══════════════════════════════════════════════════════════════
 
-trailing=$(git diff --cached --diff-filter=ACM | grep -nE '^\+.*[[:blank:]]$' 2>/dev/null | grep -vF '+++' || true)
+trailing=$(git diff --cached --diff-filter=ACM | grep -nE '^\+.*[[:blank:]]$' 2> /dev/null | grep -vF '+++' || true)
 if [ -n "$trailing" ]; then
   count=$(echo "$trailing" | wc -l | tr -d ' ')
   if [ "$TRAILING_WS_BLOCK" = "true" ]; then
@@ -251,12 +251,12 @@ if [ -n "$lua_files" ]; then
     se=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! stylua --check "$f" &>/dev/null; then
+      if ! stylua --check "$f" &> /dev/null; then
         [ $se -eq 0 ] && error "StyLua formatting issues:"
         info "$f"
         se=$((se + 1))
       fi
-    done <<<"$lua_files"
+    done <<< "$lua_files"
     if [ $se -gt 0 ]; then
       info "Fix: stylua \$(git diff --cached --name-only '*.lua')"
     else
@@ -286,13 +286,13 @@ if [ -n "$lua_files" ]; then
       while IFS= read -r f; do
         [ -z "$f" ] || [ ! -f "$f" ] && continue
         fc=$((fc + 1))
-        if ! $LC "$f" &>/dev/null; then
+        if ! $LC "$f" &> /dev/null; then
           [ $le -eq 0 ] && error "Lua syntax (${LN}):"
           info "$f"
           $LC "$f" 2>&1 | head -3 | while IFS= read -r e; do info "  $e"; done
           le=$((le + 1))
         fi
-      done <<<"$lua_files"
+      done <<< "$lua_files"
       [ $le -eq 0 ] && ok "Lua syntax (${LN}) — ${fc} file(s)"
     else
       log_skip "No Lua checker found (install luajit)"
@@ -309,10 +309,10 @@ sh_files=$(staged_by_ext sh bash zsh)
 while IFS= read -r f; do
   [ -z "$f" ] && continue
   [ -f "$f" ] || continue
-  if head -1 "$f" 2>/dev/null | grep -qE '^#!.*(bash|sh|zsh)'; then
+  if head -1 "$f" 2> /dev/null | grep -qE '^#!.*(bash|sh|zsh)'; then
     sh_files=$(printf '%s\n%s' "$sh_files" "$f")
   fi
-done <<<"$STAGED"
+done <<< "$STAGED"
 sh_files=$(echo "$sh_files" | sort -u | grep -v '^$' || true)
 
 if [ -n "$sh_files" ] && checker_on "shellcheck" && command_exists shellcheck; then
@@ -321,15 +321,15 @@ if [ -n "$sh_files" ] && checker_on "shellcheck" && command_exists shellcheck; t
   while IFS= read -r f; do
     [ -z "$f" ] || [ ! -f "$f" ] && continue
     sc_count=$((sc_count + 1))
-    if ! shellcheck -S warning "$f" &>/dev/null; then
+    if ! shellcheck -S warning "$f" &> /dev/null; then
       [ $sc_e -eq 0 ] && warn "ShellCheck warnings:"
       info "$f"
-      shellcheck -S warning -f gcc "$f" 2>/dev/null | head -3 | while IFS= read -r sc_line; do
+      shellcheck -S warning -f gcc "$f" 2> /dev/null | head -3 | while IFS= read -r sc_line; do
         info "  $sc_line"
       done
       sc_e=$((sc_e + 1))
     fi
-  done <<<"$sh_files"
+  done <<< "$sh_files"
   [ $sc_e -eq 0 ] && ok "ShellCheck — ${sc_count} file(s)"
 fi
 
@@ -345,12 +345,12 @@ if [ -n "$py_files" ]; then
     re=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! ruff format --check "$f" &>/dev/null; then
+      if ! ruff format --check "$f" &> /dev/null; then
         [ $re -eq 0 ] && error "Ruff format issues:"
         info "$f"
         re=$((re + 1))
       fi
-    done <<<"$py_files"
+    done <<< "$py_files"
     [ $re -gt 0 ] && info "Fix: ruff format ." || {
       fc=$(echo "$py_files" | wc -l | tr -d ' ')
       ok "Ruff format — ${fc} file(s)"
@@ -360,14 +360,14 @@ if [ -n "$py_files" ]; then
     rl=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! ruff check --quiet "$f" &>/dev/null; then
+      if ! ruff check --quiet "$f" &> /dev/null; then
         [ $rl -eq 0 ] && warn "Ruff lint issues:"
-        ruff check "$f" 2>/dev/null | head -3 | while IFS= read -r rl_line; do
+        ruff check "$f" 2> /dev/null | head -3 | while IFS= read -r rl_line; do
           info "  $rl_line"
         done
         rl=$((rl + 1))
       fi
-    done <<<"$py_files"
+    done <<< "$py_files"
     [ $rl -eq 0 ] && ok "Ruff lint"
   fi
 
@@ -376,12 +376,12 @@ if [ -n "$py_files" ]; then
     be=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! black --check --quiet "$f" &>/dev/null; then
+      if ! black --check --quiet "$f" &> /dev/null; then
         [ $be -eq 0 ] && error "Black formatting issues:"
         info "$f"
         be=$((be + 1))
       fi
-    done <<<"$py_files"
+    done <<< "$py_files"
     [ $be -gt 0 ] && info "Fix: black ." || ok "Black"
   fi
 
@@ -392,13 +392,13 @@ if [ -n "$py_files" ]; then
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
       pc=$((pc + 1))
-      if ! python3 -m py_compile "$f" &>/dev/null; then
+      if ! python3 -m py_compile "$f" &> /dev/null; then
         [ $pe -eq 0 ] && error "Python syntax errors:"
         info "$f"
         python3 -m py_compile "$f" 2>&1 | head -3 | while IFS= read -r e; do info "  $e"; done
         pe=$((pe + 1))
       fi
-    done <<<"$py_files"
+    done <<< "$py_files"
     [ $pe -eq 0 ] && ok "Python syntax — ${pc} file(s)"
   fi
 fi
@@ -419,12 +419,12 @@ if [ -n "$js_files" ]; then
       pe=0
       while IFS= read -r f; do
         [ -z "$f" ] || [ ! -f "$f" ] && continue
-        if ! $P --check "$f" &>/dev/null; then
+        if ! $P --check "$f" &> /dev/null; then
           [ $pe -eq 0 ] && error "Prettier formatting issues:"
           info "$f"
           pe=$((pe + 1))
         fi
-      done <<<"$js_files"
+      done <<< "$js_files"
       [ $pe -gt 0 ] && info "Fix: $P --write ." || ok "Prettier"
     fi
   fi
@@ -438,12 +438,12 @@ if [ -n "$js_files" ]; then
       ee=0
       while IFS= read -r f; do
         [ -z "$f" ] || [ ! -f "$f" ] && continue
-        if ! $E --quiet "$f" &>/dev/null; then
+        if ! $E --quiet "$f" &> /dev/null; then
           [ $ee -eq 0 ] && warn "ESLint issues:"
           info "$f"
           ee=$((ee + 1))
         fi
-      done <<<"$js_files"
+      done <<< "$js_files"
       [ $ee -eq 0 ] && ok "ESLint"
     fi
   fi
@@ -454,12 +454,12 @@ if [ -n "$js_files" ]; then
       bm=0
       while IFS= read -r f; do
         [ -z "$f" ] || [ ! -f "$f" ] && continue
-        if ! biome check "$f" &>/dev/null; then
+        if ! biome check "$f" &> /dev/null; then
           [ $bm -eq 0 ] && error "Biome issues:"
           info "$f"
           bm=$((bm + 1))
         fi
-      done <<<"$js_files"
+      done <<< "$js_files"
       [ $bm -gt 0 ] && info "Fix: biome check --write ." || ok "Biome"
     fi
   fi
@@ -477,12 +477,12 @@ if [ -n "$go_files" ]; then
     ge=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if [ -n "$(gofmt -l "$f" 2>/dev/null)" ]; then
+      if [ -n "$(gofmt -l "$f" 2> /dev/null)" ]; then
         [ $ge -eq 0 ] && error "Go formatting issues:"
         info "$f"
         ge=$((ge + 1))
       fi
-    done <<<"$go_files"
+    done <<< "$go_files"
     if [ $ge -gt 0 ]; then
       info "Fix: gofmt -w ."
     else
@@ -493,7 +493,7 @@ if [ -n "$go_files" ]; then
 
   # ── go vet ────────────────────────────────────────────────
   if checker_on "govet" && [ -f "go.mod" ] && command_exists go; then
-    if ! go vet ./... &>/dev/null; then
+    if ! go vet ./... &> /dev/null; then
       warn "go vet found issues"
     else
       ok "go vet"
@@ -513,18 +513,18 @@ if [ -n "$rs_files" ]; then
     re=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! rustfmt --check "$f" &>/dev/null; then
+      if ! rustfmt --check "$f" &> /dev/null; then
         [ $re -eq 0 ] && error "rustfmt issues:"
         info "$f"
         re=$((re + 1))
       fi
-    done <<<"$rs_files"
+    done <<< "$rs_files"
     [ $re -gt 0 ] && info "Fix: cargo fmt" || ok "rustfmt"
   fi
 
   # ── clippy ────────────────────────────────────────────────
   if checker_on "clippy" && [ -f "Cargo.toml" ] && command_exists cargo; then
-    if ! cargo clippy --quiet -- -D warnings &>/dev/null; then
+    if ! cargo clippy --quiet -- -D warnings &> /dev/null; then
       warn "Clippy warnings detected"
       info "Fix: cargo clippy --fix"
     else
@@ -543,12 +543,12 @@ if [ -n "$yaml_files" ] && checker_on "yamllint"; then
     ye=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! yamllint -d relaxed "$f" &>/dev/null; then
+      if ! yamllint -d relaxed "$f" &> /dev/null; then
         [ $ye -eq 0 ] && warn "YAML lint warnings:"
         info "$f"
         ye=$((ye + 1))
       fi
-    done <<<"$yaml_files"
+    done <<< "$yaml_files"
     [ $ye -eq 0 ] && {
       fc=$(echo "$yaml_files" | wc -l | tr -d ' ')
       ok "YAML lint — ${fc} file(s)"
@@ -573,12 +573,12 @@ if [ -n "$json_files" ] && checker_on "json-syntax"; then
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
       jc=$((jc + 1))
-      if ! eval "$JC \"$f\"" &>/dev/null; then
+      if ! eval "$JC \"$f\"" &> /dev/null; then
         [ $je -eq 0 ] && error "JSON syntax errors:"
         info "$f"
         je=$((je + 1))
       fi
-    done <<<"$json_files"
+    done <<< "$json_files"
     [ $je -eq 0 ] && ok "JSON syntax — ${jc} file(s)"
   fi
 fi
@@ -592,12 +592,12 @@ if [ -n "$toml_files" ] && checker_on "taplo" && command_exists taplo; then
   te=0
   while IFS= read -r f; do
     [ -z "$f" ] || [ ! -f "$f" ] && continue
-    if ! taplo format --check "$f" &>/dev/null; then
+    if ! taplo format --check "$f" &> /dev/null; then
       [ $te -eq 0 ] && error "Taplo (TOML) formatting issues:"
       info "$f"
       te=$((te + 1))
     fi
-  done <<<"$toml_files"
+  done <<< "$toml_files"
   [ $te -gt 0 ] && info "Fix: taplo format ." || ok "Taplo"
 fi
 
@@ -610,12 +610,12 @@ if [ -n "$md_files" ] && checker_on "markdownlint" && command_exists markdownlin
   me=0
   while IFS= read -r f; do
     [ -z "$f" ] || [ ! -f "$f" ] && continue
-    if ! markdownlint "$f" &>/dev/null; then
+    if ! markdownlint "$f" &> /dev/null; then
       [ $me -eq 0 ] && warn "Markdown lint:"
       info "$f"
       me=$((me + 1))
     fi
-  done <<<"$md_files"
+  done <<< "$md_files"
   [ $me -eq 0 ] && {
     fc=$(echo "$md_files" | wc -l | tr -d ' ')
     ok "markdownlint — ${fc} file(s)"
@@ -635,12 +635,12 @@ if [ -n "$css_files" ] && checker_on "stylelint"; then
     sl=0
     while IFS= read -r f; do
       [ -z "$f" ] || [ ! -f "$f" ] && continue
-      if ! $SL --quiet "$f" &>/dev/null; then
+      if ! $SL --quiet "$f" &> /dev/null; then
         [ $sl -eq 0 ] && warn "Stylelint issues:"
         info "$f"
         sl=$((sl + 1))
       fi
-    done <<<"$css_files"
+    done <<< "$css_files"
     [ $sl -eq 0 ] && ok "Stylelint"
   fi
 fi
@@ -654,14 +654,14 @@ if [ -n "$dockerfiles" ] && checker_on "hadolint" && command_exists hadolint; th
   he=0
   while IFS= read -r f; do
     [ -z "$f" ] || [ ! -f "$f" ] && continue
-    if ! hadolint "$f" &>/dev/null; then
+    if ! hadolint "$f" &> /dev/null; then
       [ $he -eq 0 ] && warn "Hadolint (Dockerfile):"
-      hadolint "$f" 2>/dev/null | head -3 | while IFS= read -r hl; do
+      hadolint "$f" 2> /dev/null | head -3 | while IFS= read -r hl; do
         info "  $hl"
       done
       he=$((he + 1))
     fi
-  done <<<"$dockerfiles"
+  done <<< "$dockerfiles"
   [ $he -eq 0 ] && ok "Hadolint"
 fi
 
@@ -671,7 +671,7 @@ fi
 
 tf_files=$(staged_by_ext tf)
 if [ -n "$tf_files" ] && checker_on "terraform" && command_exists terraform; then
-  if ! terraform fmt -check -diff . &>/dev/null; then
+  if ! terraform fmt -check -diff . &> /dev/null; then
     error "Terraform formatting issues"
     info "Fix: terraform fmt"
   else
