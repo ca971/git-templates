@@ -57,7 +57,8 @@ has_upstream() {
 # ── Context ───────────────────────────────────────────────────
 branch=$(git symbolic-ref --short HEAD 2> /dev/null || echo "detached")
 remote="$1"
-url="$2"
+#url="$2"
+# $2 is the remote URL — not used in this hook
 
 # Detect if pushing a tag — save stdin before it's consumed
 pushing_tag=false
